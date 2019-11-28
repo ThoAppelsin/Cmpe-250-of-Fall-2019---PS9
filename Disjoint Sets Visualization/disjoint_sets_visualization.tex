@@ -1,0 +1,197 @@
+% 1610, 149, 54, 43 and 32.
+\documentclass[aspectratio=32]{beamer}
+
+\usetheme{Flip}
+\usepackage{mathtools}
+\usepackage{listings}
+
+\lstset{
+	basicstyle=\fontseries{c}\selectfont\footnotesize,
+	columns=fullflexible,
+	language=C++,
+	numbers=left,
+	tabsize=4,
+	showspaces=false,
+	showstringspaces=false,
+	stepnumber=1,
+	numbersep=10pt,
+	commentstyle=\fontseries{lc}\selectfont\itshape
+}
+
+% Thanks to: https://tex.stackexchange.com/a/85578/69346
+\lstMakeShortInline{!}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning,calc}
+\tikzset{onslide/.code args={<#1>#2}{%
+  \only<#1>{\pgfkeysalso{#2}} % \pgfkeysalso doesn't change the path
+}}
+
+\makeatletter
+\newenvironment<>{btHighlight}[1][]
+{\begin{onlyenv}#2\begingroup\tikzset{bt@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\bt@HL@box[bt@Highlight@par]{\@tempboxa}\endgroup\end{onlyenv}}
+
+\newcommand<>\btHL[1][]{%
+  \only#2{\begin{btHighlight}[#1]\bgroup\aftergroup\bt@HL@endenv}%
+}
+\def\bt@HL@endenv{%
+  \end{btHighlight}%   
+  \egroup
+}
+\newcommand{\bt@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=orange!30,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+\makeatother
+
+%%% End thanks
+
+\title[Disjoint Sets]{
+	Disjoint Sets \\
+	A visualization
+}
+\author[Utkan Gezer]{M. Utkan Gezer}
+
+\begin{document}
+
+\begin{frame}[containsverbatim]
+\frametitle{The data structure}
+\begin{center}
+\begin{tabular}{c}
+\begin{lstlisting}
+class DJSets { vector<int> s; };
+
+DJSets::DJSets( int n ) : s( n, -1 ) { }
+
+void DJSets::unionSets( int rA, int rB ) {
+    if( s[ rB ] < s[ rA ] ) s[ rA ] = rB;
+    else {
+        if( s[ rA ] == s[ rB ] ) --s[ rA ];
+        s[ rB ] = rA;
+    }
+}
+
+int DJSets::find( int x ) {
+    if( s[ x ] < 0 )	return x;
+    else				return find( s[ x ] );
+}
+\end{lstlisting}
+\end{tabular}
+\end{center}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{The visualization}
+\begin{columns}
+
+\begin{column}{5cm}
+	\begin{block}{\texttt{main}}
+		\setlength\textheight{1em}
+		\footnotesize
+		\ttfamily
+		\only<1>{// BEGIN\\}
+		\only<1-2>{DJSets djSet\{10\};\\}
+		\only<1>{cout << djSet.find(4);\\}
+		\only<2-3>{cout << djSet.find(4); // 4\\}
+		\only<2>{cout << djSet.find(2);\\}
+		\only<3-6>{cout << djSet.find(2); // 2\\}
+		\only<3-7>{djSet.unionSets(4, 2);\\}
+		\only<4-6>{cout << djSet.find(4);\\}
+		\only<7-9>{cout << djSet.find(4); // 4\\}
+		\only<7>{cout << djSet.find(2);\\}
+		\only<8>{cout << djSet.find(2); // f(4)\\}
+		\only<9-10>{cout << djSet.find(2); // 4\\}
+		\only<8-12>{djSet.unionSets(4, 3);\\}
+		\only<10-11>{cout << djSet.find(3); // f(4)\\}
+		\only<12>{cout << djSet.find(3); // 4\\}
+		\only<11-12>{// END}
+	\end{block}
+
+	\begin{block}{\texttt{vector s}}
+		\centering
+		\begin{tikzpicture}[scale=0.49]
+			\fill<5> [black] (4,0) -|++ (1,1) -| cycle;
+			\fill<6> [black] (2,0) -|++ (1,1) -| cycle;
+			\fill<10> [black] (3,0) -|++ (1,1) -| cycle;
+
+			\draw[step=1] (0,0) grid (10,1);
+			\node at (.5,.5) {-1};
+			\node at (1.5,.5) {-1};
+			\node at (2.5,.5) {\only<-5>{-1}\only<6->{4}};
+			\node at (3.5,.5) {\only<-9>{-1}\only<10->{4}};
+			\node at (4.5,.5) {\only<-4>{-1}\only<5->{-2}};
+			\node at (5.5,.5) {-1};
+			\node at (6.5,.5) {-1};
+			\node at (7.5,.5) {-1};
+			\node at (8.5,.5) {-1};
+			\node at (9.5,.5) {-1};
+		\end{tikzpicture}
+	\end{block}
+
+	\begin{block}{The graph}
+		\centering
+		\small
+		\begin{tikzpicture}[scale=0.5]
+			\fill<6,8>[black] (n2) circle (4mm);
+			\fill<10,11>[black] (n3) circle (4mm);
+			\foreach \i in {0,...,9} {
+				\node[draw, circle, inner sep=2] (n\i) at (\i*36:1.5) {\clap{\i}};
+			}
+			\path[draw, ->] (n0) --++ (0*36:1.0);
+			\path[draw, ->] (n1) --++ (1*36:1.0);
+			\path<-5>[draw, ->] (n2) --++ (2*36:1.0);
+			\path<-9>[draw, ->] (n3) --++ (3*36:1.0);
+			\path[draw, ->] (n4) --++ (4*36:1.0);
+			\path[draw, ->] (n5) --++ (5*36:1.0);
+			\path[draw, ->] (n6) --++ (6*36:1.0);
+			\path[draw, ->] (n7) --++ (7*36:1.0);
+			\path[draw, ->] (n8) --++ (8*36:1.0);
+			\path[draw, ->] (n9) --++ (9*36:1.0);
+
+			\path<7,9->[draw, ->] (n2) to [bend left] (n4);
+			\path<6,8>[draw, ->, black, very thick] (n2) to [bend left] (n4);
+
+			\path<12->[draw, ->] (n3) to[out=110, in=90, looseness=2] (n4);
+			\path<10,11>[draw, ->, black, very thick] (n3) to[out=110, in=90, looseness=2] (n4);
+		\end{tikzpicture}
+	\end{block}
+\end{column}
+
+\begin{column}{5cm}
+\begin{lstlisting}[
+	moredelim={**[is][{\btHL<1>}]{@1}{@}},
+	moredelim={**[is][{\btHL<2-3,7,9,12>}]{@2}{@}},
+	moredelim={**[is][{\btHL<4>}]{@3}{@}},
+	moredelim={**[is][{\btHL<5>}]{@4}{@}},
+	moredelim={**[is][{\btHL<6,10>}]{@5}{@}},
+	moredelim={**[is][{\btHL<8,11>}]{@6}{@}}
+]
+class DJSets { vector<int> s; };
+
+@1DJSets::DJSets( int n ) : s( n, -1 ) { }@
+
+void DJSets::unionSets( int rA, int rB ) {
+	// assume: rA, rB roots and different
+    if( s[ rB ] < s[ rA ] ) s[ rA ] = rB;
+    @3else {@
+        @4if( s[ rA ] == s[ rB ] ) --s[ rA ];@
+        @5s[ rB ] = rA;@
+    }
+}
+
+int DJSets::find( int x ) {
+    @2if( s[ x ] < 0 )	return x;@
+    @6else				return find( s[ x ] );@
+}
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+\end{frame}
+
+\end{document}
